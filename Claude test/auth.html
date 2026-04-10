@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LockrX – Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --surface: #0f1520; --surface2: #162030;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent3: #00ff9d;
+    --text: #e8edf5; --muted: #6b7a94; --border: rgba(255,255,255,0.07);
+    --error: #ff6464; --success: #00ff9d;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; padding: 60px;
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--bg) 0%, #0a1520 100%);
+  }
+
+  .left-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 70% at 30% 50%, rgba(0,212,255,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 60% at 70% 80%, rgba(123,97,255,0.07) 0%, transparent 60%);
+  }
+
+  .left-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.035) 1px, transparent 1px);
+    background-size: 50px 50px;
+    mask-image: radial-gradient(ellipse 80% 80% at 30% 50%, black, transparent);
+  }
+
+  .left-content { position: relative; z-index: 1; }
+
+  .logo {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem;
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text); margin-bottom: 60px;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem;
+  }
+  .logo span { color: var(--accent); }
+
+  .left-headline {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.03em; margin-bottom: 20px;
+  }
+  .left-headline .g {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .left-sub { color: var(--muted); line-height: 1.6; font-size: 1rem; max-width: 380px; margin-bottom: 40px; }
+
+  .trust-items { display: flex; flex-direction: column; gap: 14px; }
+  .trust-item {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--muted); font-size: 0.9rem;
+  }
+  .trust-dot {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+  }
+  .trust-dot.c1 { background: rgba(0,212,255,0.12); }
+  .trust-dot.c2 { background: rgba(123,97,255,0.12); }
+  .trust-dot.c3 { background: rgba(0,255,157,0.12); }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    width: 480px; min-height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 44px;
+    overflow-y: auto;
+  }
+
+  .auth-box { width: 100%; }
+
+  .tab-switcher {
+    display: flex; gap: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 4px;
+    margin-bottom: 36px;
+  }
+
+  .tab-btn {
+    flex: 1; padding: 10px;
+    border: none; cursor: pointer;
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500;
+    transition: all 0.25s;
+    background: transparent; color: var(--muted);
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+  }
+
+  .auth-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .auth-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 0.8rem; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.03em;
+    margin-bottom: 7px;
+  }
+
+  .input-wrap { position: relative; }
+
+  input[type="text"], input[type="email"], input[type="password"], input[type="tel"] {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: rgba(0,212,255,0.4);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+  }
+
+  input::placeholder { color: var(--muted); opacity: 0.7; }
+
+  .input-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 1rem; pointer-events: none;
+  }
+
+  .show-pass {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    font-size: 1rem; color: var(--muted);
+    transition: color 0.2s;
+  }
+  .show-pass:hover { color: var(--text); }
+
+  .forgot { text-align: right; margin-top: -10px; margin-bottom: 16px; }
+  .forgot a { color: var(--accent); font-size: 0.82rem; text-decoration: none; }
+  .forgot a:hover { text-decoration: underline; }
+
+  .submit-btn {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 12px;
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer; transition: all 0.25s;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.25);
+    margin-top: 4px;
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,212,255,0.4); }
+
+  .divider {
+    display: flex; align-items: center; gap: 14px;
+    color: var(--muted); font-size: 0.8rem; margin: 20px 0;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .social-btn {
+    width: 100%; padding: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .social-btn:hover { border-color: rgba(255,255,255,0.15); background: var(--surface2); }
+
+  .form-panel { display: none; }
+  .form-panel.active { display: block; }
+
+  .terms-text {
+    font-size: 0.78rem; color: var(--muted);
+    text-align: center; margin-top: 18px; line-height: 1.5;
+  }
+  .terms-text a { color: var(--accent); text-decoration: none; }
+
+  .error-msg {
+    background: rgba(255,100,100,0.1);
+    border: 1px solid rgba(255,100,100,0.2);
+    color: var(--error);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .success-msg {
+    background: rgba(0,255,157,0.1);
+    border: 1px solid rgba(0,255,157,0.2);
+    color: var(--success);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .back-home {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--muted); text-decoration: none; font-size: 0.85rem;
+    margin-bottom: 32px; transition: color 0.2s;
+  }
+  .back-home:hover { color: var(--text); }
+
+  @media (max-width: 900px) {
+    .left-panel { display: none; }
+    .right-panel { width: 100%; padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <div class="left-grid"></div>
+  <div class="left-content">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">🔐</div>
+      Lockr<span>X</span>
+    </a>
+    <h1 class="left-headline">Secure access<br>to your <span class="g">smart locker</span></h1>
+    <p class="left-sub">Sign in or create an account to book, pay, and control your locker from anywhere.</p>
+    <div class="trust-items">
+      <div class="trust-item">
+        <div class="trust-dot c1">⚡</div>
+        Book a locker in under 2 minutes
+      </div>
+      <div class="trust-item">
+        <div class="trust-dot c2">🔒</div>
+        PHP session-secured authentication
+      </div>
+      <div class="trust-item">
+        <div class="trust-dot c3">💳</div>
+        Cashless payment via ToyyibPay
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="right-panel">
+  <div class="auth-box">
+    <a href="index.html" class="back-home">← Back to home</a>
+
+    <div class="tab-switcher">
+      <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="form-panel active" id="login-panel">
+      <div class="auth-title">Welcome back 👋</div>
+      <div class="auth-sub">Sign in to access your locker dashboard</div>
+
+      <div class="error-msg" id="login-error">Invalid email or password. Please try again.</div>
+      <div class="success-msg" id="login-success">Login successful! Redirecting...</div>
+
+      <div class="form-group">
+        <label>EMAIL ADDRESS</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="login-email" placeholder="you@example.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>PASSWORD</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔑</span>
+          <input type="password" id="login-pass" placeholder="••••••••">
+          <button class="show-pass" onclick="togglePass('login-pass', this)">👁️</button>
+        </div>
+      </div>
+      <div class="forgot"><a href="#">Forgot password?</a></div>
+      <button class="submit-btn" onclick="handleLogin()">Sign In →</button>
+
+      <div class="divider">or continue with</div>
+      <button class="social-btn">🌐 Sign in with Google</button>
+
+      <p class="terms-text" style="margin-top:16px;">
+        Don't have an account? <a href="#" onclick="switchTab('register')">Sign up free</a>
+      </p>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="form-panel" id="register-panel">
+      <div class="auth-title">Create account ✨</div>
+      <div class="auth-sub">Join LockrX and secure your belongings smarter</div>
+
+      <div class="error-msg" id="reg-error">Please fill in all fields correctly.</div>
+      <div class="success-msg" id="reg-success">Account created! Redirecting to dashboard...</div>
+
+      <div class="form-group">
+        <label>FULL NAME</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="reg-name" placeholder="Ahmad Razif">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>EMAIL ADDRESS</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="reg-email" placeholder="you@example.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>PHONE NUMBER</label>
+        <div class="input-wrap">
+          <span class="input-icon">📱</span>
+          <input type="tel" id="reg-phone" placeholder="+60 12-345 6789">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>PASSWORD</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔑</span>
+          <input type="password" id="reg-pass" placeholder="Min. 8 characters">
+          <button class="show-pass" onclick="togglePass('reg-pass', this)">👁️</button>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="handleRegister()">Create Account →</button>
+      <p class="terms-text">
+        By creating an account, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+    });
+    document.getElementById('login-panel').classList.toggle('active', tab === 'login');
+    document.getElementById('register-panel').classList.toggle('active', tab === 'register');
+  }
+
+  function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.textContent = input.type === 'password' ? '👁️' : '🙈';
+  }
+
+  function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    const err = document.getElementById('login-error');
+    const suc = document.getElementById('login-success');
+    err.style.display = 'none'; suc.style.display = 'none';
+
+    if (!email || !pass) {
+      err.style.display = 'block'; return;
+    }
+    suc.style.display = 'block';
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+  }
+
+  function handleRegister() {
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const phone = document.getElementById('reg-phone').value;
+    const pass = document.getElementById('reg-pass').value;
+    const err = document.getElementById('reg-error');
+    const suc = document.getElementById('reg-success');
+    err.style.display = 'none'; suc.style.display = 'none';
+
+    if (!name || !email || !phone || !pass || pass.length < 8) {
+      err.style.display = 'block'; return;
+    }
+    suc.style.display = 'block';
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+  }
+</script>
+</body>
+</html>

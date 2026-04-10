@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LockrX – Payment</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --surface: #0f1520; --surface2: #162030;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent3: #00ff9d;
+    --text: #e8edf5; --muted: #6b7a94; --border: rgba(255,255,255,0.07);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+  .sidebar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 9px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; text-decoration: none; color: var(--text); }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+  .sidebar-logo span { color: var(--accent); }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 11px 20px; margin: 2px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); background: rgba(0,212,255,0.08); }
+  .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+  .sidebar-bottom { margin-top: auto; padding: 16px 10px 0; border-top: 1px solid var(--border); }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--surface2); border-radius: 12px; }
+  .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .user-name { font-size: 0.85rem; font-weight: 500; }
+  .user-email { font-size: 0.72rem; color: var(--muted); }
+
+  .main { margin-left: 240px; flex: 1; padding: 40px; display: flex; align-items: flex-start; justify-content: center; }
+
+  .payment-container { width: 100%; max-width: 900px; }
+
+  .breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.82rem; margin-bottom: 28px; }
+  .breadcrumb a { color: var(--muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--text); }
+  .breadcrumb-current { color: var(--text); }
+
+  .page-title { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 36px; }
+
+  .pay-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin-bottom: 20px; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 20px; }
+
+  /* ORDER SUMMARY */
+  .summary-locker {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface2); border-radius: 14px; padding: 16px;
+    border: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .sl-icon { font-size: 1.8rem; }
+  .sl-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; }
+  .sl-sub { color: var(--muted); font-size: 0.8rem; }
+  .sl-badge { display: inline-block; background: rgba(0,212,255,0.1); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 0.7rem; font-weight: 600; margin-top: 4px; }
+
+  .sum-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .sum-row:last-child { border-bottom: none; }
+  .sum-row .lbl { color: var(--muted); }
+  .sum-total { display: flex; justify-content: space-between; padding: 16px 0 0; }
+  .sum-total .lbl { font-family: 'Syne', sans-serif; font-weight: 700; }
+  .sum-total .val { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  /* PAYMENT METHODS */
+  .method-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .method-option {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px; border: 1.5px solid var(--border);
+    border-radius: 14px; cursor: pointer; transition: all 0.2s;
+    position: relative;
+  }
+  .method-option:hover { border-color: rgba(0,212,255,0.3); }
+  .method-option.selected {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.04);
+  }
+
+  .method-logo {
+    width: 52px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 800; letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+  .ml-toyyib { background: linear-gradient(135deg, #1a3a6e, #2563eb); color: #fff; }
+  .ml-billplz { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; }
+  .ml-fpx { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
+
+  .method-name { font-weight: 600; font-size: 0.9rem; }
+  .method-sub { color: var(--muted); font-size: 0.77rem; }
+
+  .method-radio {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--border);
+    margin-left: auto; flex-shrink: 0; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .method-option.selected .method-radio {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .method-option.selected .method-radio::after {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--bg);
+  }
+
+  /* SECURE BADGE */
+  .secure-badge {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    color: var(--muted); font-size: 0.78rem; margin-top: 16px;
+  }
+
+  /* PAY BUTTON */
+  .pay-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 14px;
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.25s;
+    box-shadow: 0 6px 24px rgba(0,212,255,0.3);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-top: 20px;
+  }
+  .pay-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,212,255,0.45); }
+
+  /* LOADING OVERLAY */
+  .pay-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(8,12,20,0.92);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    display: none;
+  }
+  .pay-spinner {
+    width: 60px; height: 60px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pay-msg { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+  .pay-sub-msg { color: var(--muted); font-size: 0.85rem; }
+
+  @media (max-width: 1024px) { .pay-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; padding: 24px 16px; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo"><div class="logo-icon">🔐</div>Lockr<span>X</span></a>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item active" href="#"><span class="nav-icon">💳</span> Payment</a>
+    <a class="nav-item" href="history.html"><span class="nav-icon">📋</span> My Bookings</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar">AR</div>
+        <div><div class="user-name">Ahmad Razif</div><div class="user-email">ahmad@email.com</div></div>
+      </div>
+      <a class="nav-item" href="index.html" style="margin-top:8px;"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="payment-container">
+      <div class="breadcrumb">
+        <a href="dashboard.html">Dashboard</a> <span>›</span>
+        <a href="booking.html">Booking</a> <span>›</span>
+        <span class="breadcrumb-current">Payment</span>
+      </div>
+
+      <div class="page-title">Complete Payment</div>
+      <div class="page-sub">Choose your preferred payment method to confirm the booking</div>
+
+      <div class="pay-grid">
+        <!-- LEFT -->
+        <div>
+          <!-- Payment Method -->
+          <div class="card">
+            <div class="card-title">💳 Payment Method</div>
+            <div class="method-list">
+              <div class="method-option selected" onclick="selectMethod(this)">
+                <div class="method-logo ml-toyyib">TOYYIB</div>
+                <div>
+                  <div class="method-name">ToyyibPay</div>
+                  <div class="method-sub">Malaysian Online Banking & Cards</div>
+                </div>
+                <div class="method-radio"></div>
+              </div>
+              <div class="method-option" onclick="selectMethod(this)">
+                <div class="method-logo ml-billplz">BILLPLZ</div>
+                <div>
+                  <div class="method-name">Billplz</div>
+                  <div class="method-sub">FPX Payment Gateway</div>
+                </div>
+                <div class="method-radio"></div>
+              </div>
+              <div class="method-option" onclick="selectMethod(this)">
+                <div class="method-logo ml-fpx">FPX</div>
+                <div>
+                  <div class="method-name">FPX Direct</div>
+                  <div class="method-sub">Internet Banking (All Banks)</div>
+                </div>
+                <div class="method-radio"></div>
+              </div>
+            </div>
+
+            <div class="secure-badge">
+              🔒 Payments are processed through encrypted secure gateways
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Order Summary -->
+        <div>
+          <div class="card">
+            <div class="card-title">🧾 Order Summary</div>
+            <div class="summary-locker">
+              <div class="sl-icon">🔓</div>
+              <div>
+                <div class="sl-name">Locker L-01</div>
+                <div class="sl-sub">Ground Floor · Standard Size</div>
+                <div class="sl-badge">2 HOURS</div>
+              </div>
+            </div>
+            <div class="sum-row"><span class="lbl">Locker Rental</span><span>RM 4.00</span></div>
+            <div class="sum-row"><span class="lbl">Duration</span><span>2 Hours</span></div>
+            <div class="sum-row"><span class="lbl">Service Fee</span><span>RM 0.00</span></div>
+            <div class="sum-row"><span class="lbl">SST (6%)</span><span>RM 0.24</span></div>
+            <div class="sum-total">
+              <span class="lbl">Total Due</span>
+              <span class="val">RM 4.24</span>
+            </div>
+
+            <button class="pay-btn" onclick="processPay()">
+              🔐 Pay Now · RM 4.24
+            </button>
+
+            <div class="secure-badge" style="margin-top:12px;">
+              You'll be redirected to the secure payment gateway
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;font-size:0.82rem;color:var(--muted);line-height:1.6;">
+            <strong style="color:var(--text);font-size:0.85rem;">📌 Booking Policy</strong><br><br>
+            • Rental begins immediately after payment confirmation<br>
+            • You can extend your rental from the locker control panel<br>
+            • Locker auto-locks when rental period ends<br>
+            • Contact support if you face any issues
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Loading Overlay -->
+<div class="pay-overlay" id="pay-overlay">
+  <div class="pay-spinner"></div>
+  <div class="pay-msg">Processing Payment...</div>
+  <div class="pay-sub-msg">Connecting to payment gateway · Please wait</div>
+</div>
+
+<script>
+  function selectMethod(el) {
+    document.querySelectorAll('.method-option').forEach(m => m.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function processPay() {
+    document.getElementById('pay-overlay').style.display = 'flex';
+    setTimeout(() => {
+      window.location.href = 'control.html';
+    }, 2500);
+  }
+</script>
+</body>
+</html>

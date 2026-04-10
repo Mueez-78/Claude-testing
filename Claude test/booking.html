@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LockrX – Booking Details</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --surface: #0f1520; --surface2: #162030;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent3: #00ff9d;
+    --text: #e8edf5; --muted: #6b7a94; --border: rgba(255,255,255,0.07);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR same as dashboard */
+  .sidebar {
+    width: 240px; flex-shrink: 0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 24px 0;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+  }
+  .sidebar-logo {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem;
+    display: flex; align-items: center; gap: 9px;
+    padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+    text-decoration: none; color: var(--text);
+  }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+  .sidebar-logo span { color: var(--accent); }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 11px 20px; margin: 2px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); background: rgba(0,212,255,0.08); }
+  .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+  .sidebar-bottom { margin-top: auto; padding: 16px 10px 0; border-top: 1px solid var(--border); }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--surface2); border-radius: 12px; }
+  .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .user-name { font-size: 0.85rem; font-weight: 500; }
+  .user-email { font-size: 0.72rem; color: var(--muted); }
+
+  .main { margin-left: 240px; flex: 1; padding: 40px; max-width: calc(100% - 240px); }
+
+  /* BREADCRUMB */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--muted); font-size: 0.82rem; margin-bottom: 28px;
+  }
+  .breadcrumb a { color: var(--muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--text); }
+  .breadcrumb-sep { opacity: 0.4; }
+  .breadcrumb-current { color: var(--text); }
+
+  .page-title { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 36px; }
+
+  .booking-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+
+  /* CARD */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* DURATION TYPE */
+  .duration-tabs { display: flex; gap: 12px; margin-bottom: 24px; }
+
+  .dur-tab {
+    flex: 1; padding: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px; text-align: center;
+    cursor: pointer; transition: all 0.25s;
+    background: transparent;
+  }
+  .dur-tab:hover { border-color: rgba(0,212,255,0.3); }
+  .dur-tab.active {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.06);
+  }
+  .dur-tab-icon { font-size: 1.5rem; margin-bottom: 8px; }
+  .dur-tab-label { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; }
+  .dur-tab-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* QUANTITY SELECTOR */
+  .qty-label { color: var(--muted); font-size: 0.8rem; font-weight: 500; letter-spacing: 0.03em; margin-bottom: 10px; }
+
+  .qty-control {
+    display: flex; align-items: center; gap: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; width: fit-content;
+  }
+
+  .qty-btn {
+    width: 48px; height: 48px;
+    background: none; border: none; color: var(--text);
+    font-size: 1.2rem; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qty-btn:hover { background: var(--surface2); color: var(--accent); }
+
+  .qty-val {
+    min-width: 80px; text-align: center;
+    font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800;
+    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    padding: 0 16px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* PRICE BREAKDOWN */
+  .price-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .price-row:last-of-type { border-bottom: none; }
+  .price-row .lbl { color: var(--muted); }
+  .price-row .val { font-weight: 500; }
+  .price-total {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0 0;
+  }
+  .price-total .lbl { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+  .price-total .val {
+    font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  /* LOCKER SUMMARY CARD */
+  .locker-summary {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--surface2);
+    border-radius: 14px; padding: 18px; margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .ls-icon { font-size: 2rem; }
+  .ls-id { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; }
+  .ls-detail { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+
+  .avail-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 100px;
+    background: rgba(0,255,157,0.1); color: var(--accent3);
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em;
+  }
+
+  .proceed-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 14px;
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer; transition: all 0.25s;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.25);
+    margin-top: 20px;
+  }
+  .proceed-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,212,255,0.4); }
+
+  .policy-note {
+    font-size: 0.76rem; color: var(--muted); text-align: center;
+    margin-top: 12px; line-height: 1.5;
+  }
+
+  /* SCHEDULE DISPLAY */
+  .schedule-display {
+    background: var(--surface2); border-radius: 12px; padding: 16px;
+    margin-top: 20px; display: flex; align-items: center; gap: 14px;
+    border: 1px solid var(--border);
+  }
+  .sched-col { flex: 1; text-align: center; }
+  .sched-lbl { font-size: 0.7rem; color: var(--muted); font-weight: 500; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .sched-val { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; }
+  .sched-sep { color: var(--border); font-size: 1.2rem; }
+
+  @media (max-width: 1024px) { .booking-layout { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; padding: 24px 16px; max-width: 100%; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo"><div class="logo-icon">🔐</div>Lockr<span>X</span></a>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item active" href="#"><span class="nav-icon">📦</span> Book Locker</a>
+    <a class="nav-item" href="history.html"><span class="nav-icon">📋</span> My Bookings</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar">AR</div>
+        <div><div class="user-name">Ahmad Razif</div><div class="user-email">ahmad@email.com</div></div>
+      </div>
+      <a class="nav-item" href="index.html" style="margin-top:8px;"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Booking Details</span>
+    </div>
+
+    <div class="page-title">Configure Your Rental</div>
+    <div class="page-sub">Choose how long you'd like to keep the locker</div>
+
+    <div class="booking-layout">
+      <!-- LEFT: Configuration -->
+      <div>
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-title">⏱️ Rental Type</div>
+          <div class="duration-tabs">
+            <div class="dur-tab active" id="tab-hour" onclick="setType('hour')">
+              <div class="dur-tab-icon">⏰</div>
+              <div class="dur-tab-label">By Hour</div>
+              <div class="dur-tab-sub">RM 2.00 / hour</div>
+            </div>
+            <div class="dur-tab" id="tab-day" onclick="setType('day')">
+              <div class="dur-tab-icon">📅</div>
+              <div class="dur-tab-label">By Day</div>
+              <div class="dur-tab-sub">RM 12.00 / day</div>
+            </div>
+          </div>
+
+          <div class="qty-label" id="qty-label">NUMBER OF HOURS</div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(-1)">−</button>
+            <div class="qty-val" id="qty-display">1</div>
+            <button class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+
+          <div class="schedule-display">
+            <div class="sched-col">
+              <div class="sched-lbl">START</div>
+              <div class="sched-val" id="start-time">—</div>
+            </div>
+            <div class="sched-sep">→</div>
+            <div class="sched-col">
+              <div class="sched-lbl">END</div>
+              <div class="sched-val" id="end-time">—</div>
+            </div>
+            <div class="sched-col">
+              <div class="sched-lbl">DURATION</div>
+              <div class="sched-val" id="dur-display">1 Hour</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Summary -->
+      <div>
+        <div class="card">
+          <div class="card-title">📋 Booking Summary</div>
+          <div class="locker-summary">
+            <div class="ls-icon">🔓</div>
+            <div>
+              <div class="ls-id">Locker L-01</div>
+              <div class="ls-detail">Ground Floor · Standard Size</div>
+              <div class="avail-badge" style="margin-top:6px;">
+                <div style="width:5px;height:5px;border-radius:50%;background:currentColor;"></div>
+                AVAILABLE
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="price-row">
+              <span class="lbl">Rate</span>
+              <span class="val" id="rate-display">RM 2.00 / hour</span>
+            </div>
+            <div class="price-row">
+              <span class="lbl">Duration</span>
+              <span class="val" id="dur-row">1 hour</span>
+            </div>
+            <div class="price-row">
+              <span class="lbl">Subtotal</span>
+              <span class="val" id="sub-total">RM 2.00</span>
+            </div>
+            <div class="price-row">
+              <span class="lbl">SST (6%)</span>
+              <span class="val" id="tax-display">RM 0.12</span>
+            </div>
+            <div class="price-total">
+              <span class="lbl">Total</span>
+              <span class="val" id="total-display">RM 2.12</span>
+            </div>
+          </div>
+
+          <button class="proceed-btn" onclick="window.location.href='payment.html'">
+            Proceed to Payment →
+          </button>
+          <p class="policy-note">Free cancellation up to 15 minutes before rental starts</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  let type = 'hour';
+  let qty = 1;
+  const rates = { hour: 2.00, day: 12.00 };
+
+  function setType(t) {
+    type = t;
+    document.getElementById('tab-hour').classList.toggle('active', t === 'hour');
+    document.getElementById('tab-day').classList.toggle('active', t === 'day');
+    document.getElementById('qty-label').textContent = t === 'hour' ? 'NUMBER OF HOURS' : 'NUMBER OF DAYS';
+    qty = 1;
+    document.getElementById('qty-display').textContent = qty;
+    update();
+  }
+
+  function changeQty(d) {
+    qty = Math.max(1, Math.min(type === 'hour' ? 24 : 30, qty + d));
+    document.getElementById('qty-display').textContent = qty;
+    update();
+  }
+
+  function update() {
+    const rate = rates[type];
+    const sub = rate * qty;
+    const tax = sub * 0.06;
+    const total = sub + tax;
+    const label = type === 'hour' ? 'hour' : 'day';
+
+    document.getElementById('rate-display').textContent = `RM ${rate.toFixed(2)} / ${label}`;
+    document.getElementById('dur-row').textContent = `${qty} ${label}${qty > 1 ? 's' : ''}`;
+    document.getElementById('sub-total').textContent = `RM ${sub.toFixed(2)}`;
+    document.getElementById('tax-display').textContent = `RM ${tax.toFixed(2)}`;
+    document.getElementById('total-display').textContent = `RM ${total.toFixed(2)}`;
+    document.getElementById('dur-display').textContent = `${qty} ${label.charAt(0).toUpperCase()+label.slice(1)}${qty > 1 ? 's' : ''}`;
+
+    const now = new Date();
+    const end = new Date(now.getTime() + qty * (type === 'hour' ? 3600000 : 86400000));
+    const fmt = d => d.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const fmtDate = d => d.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    document.getElementById('start-time').textContent = type === 'hour' ? fmt(now) : fmtDate(now);
+    document.getElementById('end-time').textContent = type === 'hour' ? fmt(end) : fmtDate(end);
+  }
+
+  update();
+</script>
+</body>
+</html>

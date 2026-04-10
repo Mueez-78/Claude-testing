@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LockrX – Locker Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --surface: #0f1520; --surface2: #162030;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent3: #00ff9d;
+    --text: #e8edf5; --muted: #6b7a94; --border: rgba(255,255,255,0.07);
+    --error: #ff6464;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+  .sidebar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 9px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; text-decoration: none; color: var(--text); }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+  .sidebar-logo span { color: var(--accent); }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 11px 20px; margin: 2px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); background: rgba(0,212,255,0.08); }
+  .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+  .sidebar-bottom { margin-top: auto; padding: 16px 10px 0; border-top: 1px solid var(--border); }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--surface2); border-radius: 12px; }
+  .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .user-name { font-size: 0.85rem; font-weight: 500; }
+  .user-email { font-size: 0.72rem; color: var(--muted); }
+
+  .main { margin-left: 240px; flex: 1; padding: 40px; display: flex; align-items: flex-start; justify-content: center; }
+
+  .control-container { width: 100%; max-width: 820px; }
+
+  .success-banner {
+    background: rgba(0,255,157,0.06);
+    border: 1px solid rgba(0,255,157,0.2);
+    border-radius: 16px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 28px; animation: slideIn 0.5s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  .sb-icon { font-size: 1.3rem; }
+  .sb-title { font-weight: 600; font-size: 0.9rem; color: var(--accent3); }
+  .sb-sub { color: var(--muted); font-size: 0.8rem; }
+
+  .page-title { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 36px; }
+
+  /* LOCKER VISUAL */
+  .locker-visual-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px; padding: 40px; text-align: center; margin-bottom: 20px;
+    position: relative; overflow: hidden;
+  }
+
+  .locker-visual-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,255,0.04) 0%, transparent 70%);
+  }
+
+  .locker-big {
+    font-size: 6rem; line-height: 1;
+    margin-bottom: 16px;
+    transition: all 0.4s;
+    display: block;
+    filter: drop-shadow(0 0 20px rgba(0,212,255,0.3));
+  }
+
+  .locker-id-big {
+    font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800;
+    letter-spacing: -0.02em; margin-bottom: 8px;
+  }
+
+  .locker-info-row {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    color: var(--muted); font-size: 0.85rem; margin-bottom: 24px;
+  }
+  .info-sep { opacity: 0.3; }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 18px; border-radius: 100px;
+    font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em;
+    transition: all 0.4s;
+  }
+  .status-locked { background: rgba(255,100,100,0.12); color: var(--error); }
+  .status-unlocked { background: rgba(0,255,157,0.12); color: var(--accent3); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+  /* TIMER */
+  .timer-section {
+    background: var(--surface2); border-radius: 16px; padding: 20px;
+    text-align: center; margin-bottom: 20px; border: 1px solid var(--border);
+  }
+  .timer-label { color: var(--muted); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+  .timer-display {
+    font-family: 'Syne', sans-serif; font-size: 3rem; font-weight: 800;
+    letter-spacing: -0.02em; line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .timer-sub { color: var(--muted); font-size: 0.8rem; margin-top: 6px; }
+
+  .timer-bar-track {
+    height: 4px; background: var(--surface2);
+    border-radius: 100px; margin-top: 14px; overflow: hidden;
+  }
+  .timer-bar-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s linear;
+  }
+
+  /* CONTROLS */
+  .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  .ctrl-btn {
+    padding: 28px 20px;
+    border-radius: 20px; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    font-family: 'DM Sans', sans-serif; transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+
+  .ctrl-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .ctrl-btn:hover::before { opacity: 1; }
+
+  .btn-unlock {
+    background: linear-gradient(135deg, rgba(0,255,157,0.15) 0%, rgba(0,212,255,0.1) 100%);
+    border: 1.5px solid rgba(0,255,157,0.3);
+    color: var(--accent3);
+  }
+  .btn-unlock:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,255,157,0.15); border-color: rgba(0,255,157,0.6); }
+  .btn-unlock:active { transform: scale(0.97); }
+
+  .btn-lock {
+    background: linear-gradient(135deg, rgba(255,100,100,0.12) 0%, rgba(180,0,255,0.08) 100%);
+    border: 1.5px solid rgba(255,100,100,0.25);
+    color: var(--error);
+  }
+  .btn-lock:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(255,100,100,0.12); border-color: rgba(255,100,100,0.5); }
+  .btn-lock:active { transform: scale(0.97); }
+
+  .ctrl-icon { font-size: 2.5rem; }
+  .ctrl-label { font-size: 1rem; font-weight: 700; }
+  .ctrl-sub { font-size: 0.75rem; opacity: 0.7; }
+
+  /* ACTIVITY LOG */
+  .log-list { display: flex; flex-direction: column; gap: 8px; }
+  .log-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; background: var(--surface2);
+    border-radius: 10px; font-size: 0.82rem;
+  }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .log-text { flex: 1; }
+  .log-time { color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+
+  .extend-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .extend-input {
+    flex: 1; min-width: 140px;
+    padding: 10px 14px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    outline: none;
+  }
+  .extend-input:focus { border-color: rgba(0,212,255,0.4); }
+  .extend-btn {
+    padding: 10px 20px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 10px; color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: all 0.25s;
+  }
+  .extend-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,255,0.3); }
+
+  .feedback-msg {
+    position: fixed; bottom: 30px; right: 30px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 0.9rem; font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.4s ease;
+    z-index: 999; max-width: 300px;
+  }
+  .feedback-msg.show { transform: translateY(0); opacity: 1; }
+
+  @media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; padding: 24px 16px; } }
+  @media (max-width: 500px) { .controls-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo"><div class="logo-icon">🔐</div>Lockr<span>X</span></a>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item active" href="#"><span class="nav-icon">🎛️</span> Locker Control</a>
+    <a class="nav-item" href="history.html"><span class="nav-icon">📋</span> My Bookings</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar">AR</div>
+        <div><div class="user-name">Ahmad Razif</div><div class="user-email">ahmad@email.com</div></div>
+      </div>
+      <a class="nav-item" href="index.html" style="margin-top:8px;"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="control-container">
+      <div class="success-banner">
+        <div class="sb-icon">✅</div>
+        <div>
+          <div class="sb-title">Payment Confirmed · RM 4.24 via ToyyibPay</div>
+          <div class="sb-sub">Your locker rental is now active. Transaction ID: TXN-20251204-8821</div>
+        </div>
+      </div>
+
+      <div class="page-title">Locker Control Panel</div>
+      <div class="page-sub">Manage your active locker rental in real-time</div>
+
+      <!-- LOCKER VISUAL -->
+      <div class="locker-visual-card">
+        <span class="locker-big" id="locker-emoji">🔒</span>
+        <div class="locker-id-big">Locker L-01</div>
+        <div class="locker-info-row">
+          <span>Ground Floor</span>
+          <span class="info-sep">·</span>
+          <span>Standard Size</span>
+          <span class="info-sep">·</span>
+          <span>Booking #8821</span>
+        </div>
+        <div class="status-pill status-locked" id="status-pill">
+          <div class="status-dot"></div>
+          <span id="status-text">LOCKED</span>
+        </div>
+      </div>
+
+      <!-- TIMER -->
+      <div class="timer-section">
+        <div class="timer-label">⏳ Remaining Rental Time</div>
+        <div class="timer-display" id="timer">01:58:42</div>
+        <div class="timer-sub">Rental ends at 4:30 PM today</div>
+        <div class="timer-bar-track">
+          <div class="timer-bar-fill" id="timer-bar" style="width: 99%;"></div>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="controls-grid">
+        <button class="ctrl-btn btn-unlock" onclick="unlockLocker()">
+          <span class="ctrl-icon">🔓</span>
+          <span class="ctrl-label">UNLOCK</span>
+          <span class="ctrl-sub">Tap to open your locker</span>
+        </button>
+        <button class="ctrl-btn btn-lock" onclick="lockLocker()">
+          <span class="ctrl-icon">🔒</span>
+          <span class="ctrl-label">LOCK</span>
+          <span class="ctrl-sub">Tap to secure your locker</span>
+        </button>
+      </div>
+
+      <!-- EXTEND RENTAL -->
+      <div class="card">
+        <div class="card-title">⚡ Extend Rental</div>
+        <div class="extend-bar">
+          <select class="extend-input">
+            <option>+ 1 Hour (RM 2.00)</option>
+            <option>+ 2 Hours (RM 4.00)</option>
+            <option>+ 3 Hours (RM 6.00)</option>
+            <option>+ 1 Day (RM 12.00)</option>
+          </select>
+          <button class="extend-btn" onclick="showFeedback('⏱️', 'Rental extended successfully!', 'var(--accent3)')">Extend & Pay</button>
+        </div>
+      </div>
+
+      <!-- ACTIVITY LOG -->
+      <div class="card">
+        <div class="card-title">📡 Activity Log</div>
+        <div class="log-list" id="log-list">
+          <div class="log-item">
+            <div class="log-dot" style="background:var(--accent3)"></div>
+            <div class="log-text">Payment confirmed · RM 4.24 via ToyyibPay</div>
+            <div class="log-time">2:30 PM</div>
+          </div>
+          <div class="log-item">
+            <div class="log-dot" style="background:var(--accent)"></div>
+            <div class="log-text">Locker L-01 assigned to your account</div>
+            <div class="log-time">2:30 PM</div>
+          </div>
+          <div class="log-item">
+            <div class="log-dot" style="background:var(--muted)"></div>
+            <div class="log-text">Rental started · 2 hours booked</div>
+            <div class="log-time">2:30 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Feedback Toast -->
+<div class="feedback-msg" id="feedback-msg">
+  <span id="feedback-icon">🔓</span>
+  <span id="feedback-text">Locker unlocked!</span>
+</div>
+
+<script>
+  let isLocked = true;
+  let totalSeconds = 7122; // 1h 58m 42s
+  const totalOriginal = 7200;
+
+  // TIMER
+  setInterval(() => {
+    if (totalSeconds > 0) totalSeconds--;
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    document.getElementById('timer').textContent =
+      `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    document.getElementById('timer-bar').style.width = `${(totalSeconds / totalOriginal) * 100}%`;
+  }, 1000);
+
+  function unlockLocker() {
+    if (!isLocked) return;
+    isLocked = false;
+    document.getElementById('locker-emoji').textContent = '🔓';
+    document.getElementById('locker-emoji').style.filter = 'drop-shadow(0 0 24px rgba(0,255,157,0.5))';
+    const pill = document.getElementById('status-pill');
+    pill.className = 'status-pill status-unlocked';
+    document.getElementById('status-text').textContent = 'UNLOCKED';
+    addLog('🔓', 'Locker unlocked via app', 'var(--accent3)');
+    showFeedback('🔓', 'Locker unlocked! Access granted.', 'var(--accent3)');
+  }
+
+  function lockLocker() {
+    if (isLocked) return;
+    isLocked = true;
+    document.getElementById('locker-emoji').textContent = '🔒';
+    document.getElementById('locker-emoji').style.filter = 'drop-shadow(0 0 20px rgba(0,212,255,0.3))';
+    const pill = document.getElementById('status-pill');
+    pill.className = 'status-pill status-locked';
+    document.getElementById('status-text').textContent = 'LOCKED';
+    addLog('🔒', 'Locker locked and secured', 'var(--error)');
+    showFeedback('🔒', 'Locker locked and secured!', 'var(--error)');
+  }
+
+  function addLog(icon, text, color) {
+    const list = document.getElementById('log-list');
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<div class="log-dot" style="background:${color}"></div><div class="log-text">${text}</div><div class="log-time">${time}</div>`;
+    list.insertBefore(item, list.firstChild);
+  }
+
+  function showFeedback(icon, text, color) {
+    const msg = document.getElementById('feedback-msg');
+    document.getElementById('feedback-icon').textContent = icon;
+    document.getElementById('feedback-text').textContent = text;
+    msg.style.borderColor = color.replace('var(--', '').replace(')', '');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

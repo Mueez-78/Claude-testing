@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LockrX – Booking History</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --surface: #0f1520; --surface2: #162030;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent3: #00ff9d;
+    --text: #e8edf5; --muted: #6b7a94; --border: rgba(255,255,255,0.07);
+    --error: #ff6464; --warn: #ffb800;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+  .sidebar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 9px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; text-decoration: none; color: var(--text); }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+  .sidebar-logo span { color: var(--accent); }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 11px 20px; margin: 2px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); background: rgba(0,212,255,0.08); }
+  .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+  .sidebar-bottom { margin-top: auto; padding: 16px 10px 0; border-top: 1px solid var(--border); }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--surface2); border-radius: 12px; }
+  .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .user-name { font-size: 0.85rem; font-weight: 500; }
+  .user-email { font-size: 0.72rem; color: var(--muted); }
+
+  .main { margin-left: 240px; flex: 1; padding: 40px; }
+
+  .page-title { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+  /* SUMMARY STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-mini {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 20px;
+  }
+  .stat-mini-val { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+  .stat-mini-lbl { color: var(--muted); font-size: 0.75rem; margin-top: 4px; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 7px 16px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active, .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+  .search-box {
+    margin-left: auto;
+    padding: 8px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+    outline: none; width: 200px;
+  }
+  .search-box:focus { border-color: rgba(0,212,255,0.3); }
+  .search-box::placeholder { color: var(--muted); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--surface2); border-bottom: 1px solid var(--border); }
+  th {
+    padding: 14px 20px; text-align: left;
+    font-size: 0.72rem; font-weight: 600;
+    color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  td { padding: 16px 20px; font-size: 0.88rem; vertical-align: middle; }
+
+  .locker-cell { display: flex; align-items: center; gap: 10px; }
+  .locker-icon-sm {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--surface2); display: flex; align-items: center;
+    justify-content: center; font-size: 1.1rem; flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .locker-cell-name { font-weight: 600; font-size: 0.9rem; }
+  .locker-cell-sub { color: var(--muted); font-size: 0.75rem; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 100px; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .b-paid { background: rgba(0,255,157,0.12); color: var(--accent3); }
+  .b-pending { background: rgba(255,184,0,0.12); color: var(--warn); }
+  .b-failed { background: rgba(255,100,100,0.12); color: var(--error); }
+  .b-active { background: rgba(0,212,255,0.12); color: var(--accent); }
+
+  .amount { font-family: 'Syne', sans-serif; font-weight: 700; }
+
+  .action-btn {
+    padding: 6px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+  }
+  .action-btn:hover { color: var(--accent); border-color: rgba(0,212,255,0.3); }
+
+  /* RECEIPT MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(8,12,20,0.85); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    display: none;
+  }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px; padding: 36px; width: 400px; max-width: 90vw;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.9rem; color: var(--muted);
+    transition: all 0.2s;
+  }
+  .modal-close:hover { color: var(--text); }
+  .receipt-header { text-align: center; padding-bottom: 20px; border-bottom: 1px dashed var(--border); margin-bottom: 20px; }
+  .receipt-logo { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+  .receipt-logo span { color: var(--accent); }
+  .receipt-id { color: var(--muted); font-size: 0.8rem; }
+  .receipt-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.87rem; border-bottom: 1px solid var(--border); }
+  .receipt-row:last-child { border: none; }
+  .receipt-row .lbl { color: var(--muted); }
+  .receipt-total { display: flex; justify-content: space-between; padding: 14px 0 0; }
+  .receipt-total .lbl { font-family: 'Syne', sans-serif; font-weight: 700; }
+  .receipt-total .val { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .download-btn {
+    width: 100%; padding: 12px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 12px; color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; margin-top: 20px; transition: all 0.25s;
+  }
+  .download-btn:hover { transform: translateY(-1px); }
+
+  @media (max-width: 1100px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; padding: 24px 16px; } }
+  @media (max-width: 700px) { .table-wrap { overflow-x: auto; } table { min-width: 700px; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo"><div class="logo-icon">🔐</div>Lockr<span>X</span></a>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item active" href="history.html"><span class="nav-icon">📋</span> My Bookings</a>
+    <a class="nav-item" href="#"><span class="nav-icon">👤</span> Profile</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar">AR</div>
+        <div><div class="user-name">Ahmad Razif</div><div class="user-email">ahmad@email.com</div></div>
+      </div>
+      <a class="nav-item" href="index.html" style="margin-top:8px;"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-title">Booking History</div>
+    <div class="page-sub">View all your past and active locker rentals</div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-mini">
+        <div class="stat-mini-val">12</div>
+        <div class="stat-mini-lbl">Total Bookings</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--accent3)">1</div>
+        <div class="stat-mini-lbl">Active Now</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val">RM 89.40</div>
+        <div class="stat-mini-lbl">Total Spent</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val">34h</div>
+        <div class="stat-mini-lbl">Total Rental Hours</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+      <button class="filter-btn" onclick="setFilter('completed',this)">Completed</button>
+      <button class="filter-btn" onclick="setFilter('failed',this)">Failed</button>
+      <input type="text" class="search-box" placeholder="🔍 Search bookings…" oninput="searchTable(this.value)">
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="history-table">
+        <thead>
+          <tr>
+            <th>Locker</th>
+            <th>Date & Time</th>
+            <th>Duration</th>
+            <th>Payment</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Receipt</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="receipt-header">
+      <div class="receipt-logo">Lockr<span>X</span></div>
+      <div style="font-size:1.5rem;margin:8px 0;">🧾</div>
+      <div style="font-weight:600;font-size:0.95rem;margin-bottom:4px;">Payment Receipt</div>
+      <div class="receipt-id" id="modal-txn">TXN-20251204-8821</div>
+    </div>
+    <div id="modal-body"></div>
+    <div class="receipt-total">
+      <span class="lbl">Total Paid</span>
+      <span class="val" id="modal-total">RM 4.24</span>
+    </div>
+    <button class="download-btn">⬇️ Download Receipt PDF</button>
+  </div>
+</div>
+
+<script>
+const bookings = [
+  { id: 'TXN-20251204-8821', locker: 'L-01', floor: 'Ground Floor', date: 'Dec 4, 2025', time: '2:30 PM', duration: '2 Hours', method: 'ToyyibPay', amount: 4.24, status: 'active' },
+  { id: 'TXN-20251201-7740', locker: 'L-03', floor: 'Ground Floor', date: 'Dec 1, 2025', time: '10:00 AM', duration: '3 Hours', method: 'Billplz', amount: 6.36, status: 'completed' },
+  { id: 'TXN-20251128-6612', locker: 'L-07', floor: 'Level 1', date: 'Nov 28, 2025', time: '3:15 PM', duration: '1 Day', method: 'ToyyibPay', amount: 12.72, status: 'completed' },
+  { id: 'TXN-20251120-5501', locker: 'L-02', floor: 'Ground Floor', date: 'Nov 20, 2025', time: '9:00 AM', duration: '5 Hours', method: 'FPX', amount: 10.60, status: 'completed' },
+  { id: 'TXN-20251115-4490', locker: 'L-09', floor: 'Level 2', date: 'Nov 15, 2025', time: '1:45 PM', duration: '2 Hours', method: 'ToyyibPay', amount: 4.24, status: 'failed' },
+  { id: 'TXN-20251110-3388', locker: 'L-06', floor: 'Level 1', date: 'Nov 10, 2025', time: '11:30 AM', duration: '4 Hours', method: 'Billplz', amount: 8.48, status: 'completed' },
+  { id: 'TXN-20251105-2277', locker: 'L-04', floor: 'Ground Floor', date: 'Nov 5, 2025', time: '8:00 AM', duration: '2 Days', method: 'ToyyibPay', amount: 25.44, status: 'completed' },
+];
+
+let currentFilter = 'all';
+
+function renderTable(data) {
+  const body = document.getElementById('table-body');
+  body.innerHTML = data.map(b => {
+    const s = b.status;
+    const badgeClass = s === 'active' ? 'b-active' : s === 'completed' ? 'b-paid' : s === 'failed' ? 'b-failed' : 'b-pending';
+    const badgeLabel = s.charAt(0).toUpperCase() + s.slice(1);
+    const icon = s === 'active' ? '🔐' : s === 'failed' ? '❌' : '✅';
+    return `<tr data-status="${s}">
+      <td><div class="locker-cell">
+        <div class="locker-icon-sm">${icon}</div>
+        <div><div class="locker-cell-name">Locker ${b.locker}</div><div class="locker-cell-sub">${b.floor}</div></div>
+      </div></td>
+      <td><div>${b.date}</div><div style="color:var(--muted);font-size:0.78rem;">${b.time}</div></td>
+      <td>${b.duration}</td>
+      <td>${b.method}</td>
+      <td><span class="amount">RM ${b.amount.toFixed(2)}</span></td>
+      <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+      <td><button class="action-btn" onclick='showReceipt(${JSON.stringify(b)})'>View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = f === 'all' ? bookings : bookings.filter(b => b.status === f);
+  renderTable(filtered);
+}
+
+function searchTable(query) {
+  const filtered = bookings.filter(b =>
+    b.locker.toLowerCase().includes(query.toLowerCase()) ||
+    b.id.toLowerCase().includes(query.toLowerCase()) ||
+    b.date.toLowerCase().includes(query.toLowerCase())
+  );
+  renderTable(filtered);
+}
+
+function showReceipt(b) {
+  document.getElementById('modal-txn').textContent = b.id;
+  document.getElementById('modal-total').textContent = `RM ${b.amount.toFixed(2)}`;
+  const tax = (b.amount / 1.06 * 0.06).toFixed(2);
+  const sub = (b.amount / 1.06).toFixed(2);
+  document.getElementById('modal-body').innerHTML = `
+    <div class="receipt-row"><span class="lbl">Locker</span><span>Locker ${b.locker} · ${b.floor}</span></div>
+    <div class="receipt-row"><span class="lbl">Date</span><span>${b.date} · ${b.time}</span></div>
+    <div class="receipt-row"><span class="lbl">Duration</span><span>${b.duration}</span></div>
+    <div class="receipt-row"><span class="lbl">Payment Via</span><span>${b.method}</span></div>
+    <div class="receipt-row"><span class="lbl">Subtotal</span><span>RM ${sub}</span></div>
+    <div class="receipt-row"><span class="lbl">SST (6%)</span><span>RM ${tax}</span></div>
+  `;
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+}
+
+renderTable(bookings);
+</script>
+</body>
+</html>
