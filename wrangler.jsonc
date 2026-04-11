@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "claude-testing",
+  "compatibility_date": "2026-04-11",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "Claude test"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
